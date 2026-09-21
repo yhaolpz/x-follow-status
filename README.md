@@ -1,5 +1,7 @@
 # X Follow Status
 
+![X Follow Status demo](assets/x-follow-status-demo.gif)
+
 An unpacked Manifest V3 Chrome/Chromium extension that adds two bilingual, two-line badges next to each loaded post or reply on X:
 
 - `我已关注他` / `我未关注他` with `You follow them` / `You don't follow them`
