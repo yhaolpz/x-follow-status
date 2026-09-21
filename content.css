@@ -1,0 +1,40 @@
+.x-follow-status {
+  display: inline-flex;
+  gap: 4px;
+  margin-inline-start: 6px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.x-follow-status > span {
+  border: 1px solid rgba(83, 100, 113, 0.45);
+  border-radius: 999px;
+  color: rgb(83, 100, 113);
+  display: inline-flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.2;
+  padding: 3px 6px;
+}
+
+.x-follow-status__primary {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.x-follow-status__secondary {
+  font-size: 9px;
+  font-weight: 500;
+  margin-top: 1px;
+  opacity: 0.78;
+}
+
+.x-follow-status > [data-state="yes"] {
+  border-color: rgba(0, 186, 124, 0.5);
+  color: rgb(0, 150, 100);
+}
+
+.x-follow-status > [data-state="no"] {
+  border-color: rgba(244, 33, 46, 0.35);
+  color: rgb(217, 40, 52);
+}
