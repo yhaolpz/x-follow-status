@@ -119,8 +119,10 @@
     }
 
     if (existingLabel) {
-      existingLabel.querySelector(".x-follow-status__not-following-primary").textContent = copy.primary;
-      existingLabel.querySelector(".x-follow-status__not-following-secondary").textContent = copy.secondary;
+      const primary = existingLabel.querySelector(".x-follow-status__not-following-primary");
+      const secondary = existingLabel.querySelector(".x-follow-status__not-following-secondary");
+      if (primary.textContent !== copy.primary) primary.textContent = copy.primary;
+      if (secondary.textContent !== copy.secondary) secondary.textContent = copy.secondary;
       return;
     }
 
