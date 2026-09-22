@@ -63,7 +63,7 @@
   top: 0;
 }
 
-.x-follow-status__not-following-label span:last-child {
+.x-follow-status__not-following-secondary {
   font-size: 9px;
   font-weight: 600;
   opacity: 0.85;

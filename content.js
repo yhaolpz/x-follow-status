@@ -45,6 +45,10 @@
     return /^\/[^/]+\/verified_followers\/?$/.test(window.location.pathname);
   }
 
+  function isFollowingPage() {
+    return /^\/[^/]+\/following\/?$/.test(window.location.pathname);
+  }
+
   function statusCopy(value, yes, no) {
     return value === true ? yes : value === false ? no : { primary: "状态未知", secondary: "Unknown" };
   }
@@ -105,33 +109,44 @@
     userName.appendChild(createBadge(relationship));
   }
 
-  function setNotFollowingHighlight(userCell, shouldHighlight) {
-    userCell.classList.toggle("x-follow-status--not-following", shouldHighlight);
+  function setNotFollowingHighlight(userCell, copy) {
+    userCell.classList.toggle("x-follow-status--not-following", Boolean(copy));
     const existingLabel = userCell.querySelector(":scope > .x-follow-status__not-following-label");
 
-    if (!shouldHighlight) {
+    if (!copy) {
       existingLabel?.remove();
       return;
     }
 
-    if (existingLabel) return;
+    if (existingLabel) {
+      existingLabel.querySelector(".x-follow-status__not-following-primary").textContent = copy.primary;
+      existingLabel.querySelector(".x-follow-status__not-following-secondary").textContent = copy.secondary;
+      return;
+    }
 
     const label = document.createElement("span");
     label.className = "x-follow-status__not-following-label";
     label.setAttribute("aria-hidden", "true");
-    label.innerHTML = '<span>未关注</span><span>Not following</span>';
+    label.innerHTML =
+      '<span class="x-follow-status__not-following-primary"></span>' +
+      '<span class="x-follow-status__not-following-secondary"></span>';
+    label.querySelector(".x-follow-status__not-following-primary").textContent = copy.primary;
+    label.querySelector(".x-follow-status__not-following-secondary").textContent = copy.secondary;
     userCell.appendChild(label);
   }
 
   function renderUserCell(userCell) {
     const handle = userCellHandle(userCell);
     const relationship = relationships.get(handle);
-    const shouldHighlight =
-      isVerifiedFollowersPage() &&
-      handle !== viewerHandle() &&
-      relationship?.following === false;
+    const isOtherUser = handle && handle !== viewerHandle();
+    const copy =
+      isOtherUser && isVerifiedFollowersPage() && relationship?.following === false
+        ? { primary: "你未关注", secondary: "You don't follow" }
+        : isOtherUser && isFollowingPage() && relationship?.following === true && relationship?.followedBy === false
+          ? { primary: "未关注你", secondary: "Not following you" }
+          : null;
 
-    setNotFollowingHighlight(userCell, shouldHighlight);
+    setNotFollowingHighlight(userCell, copy);
   }
 
   function refresh() {

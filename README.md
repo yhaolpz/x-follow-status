@@ -9,9 +9,14 @@ An unpacked Manifest V3 Chrome/Chromium extension that adds two bilingual, two-l
 
 It observes X's existing `TweetDetail`, `TweetResultByRestId`, and user-detail responses in the logged-in tab. It never sends a follow, unfollow, or other account action.
 
-## Verified followers highlight
+## Non-mutual follow highlight
 
-On a profile's `/<handle>/verified_followers` page, the extension gives any person you do **not** follow back a red outline and a `未关注 / Not following` label. It uses the `following: false` relationship field from X's existing `BlueVerifiedFollowers` response; it does not press X's **Follow back** button.
+The extension adds a red outline to non-mutual follows without changing your account:
+
+- On `/<handle>/following`, it marks people you follow who do **not** follow you: `未关注你 / Not following you` (`following: true`, `followed_by: false`).
+- On `/<handle>/verified_followers`, it marks people you do **not** follow back: `你未关注 / You don't follow` (`following: false`).
+
+It reads X's existing `Following` and `BlueVerifiedFollowers` responses; it never presses X's **Follow** or **Follow back** buttons.
 
 ## Install locally
 

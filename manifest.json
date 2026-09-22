@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "X Follow Status",
-  "version": "0.2.0",
-  "description": "Show mutual follow status and un-followed verified followers on X.",
+  "version": "0.3.0",
+  "description": "Show mutual follow status and non-mutual follows on X.",
   "content_scripts": [
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],

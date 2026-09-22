@@ -53,3 +53,7 @@ test("recognizes the verified followers response", () => {
   );
   assert.equal(isRelationshipResponse("https://x.com/i/api/graphql/hash/ExploreSidebar?variables=%7B%7D"), false);
 });
+
+test("recognizes the following response", () => {
+  assert.equal(isRelationshipResponse("https://x.com/i/api/graphql/hash/Following?variables=%7B%7D"), true);
+});

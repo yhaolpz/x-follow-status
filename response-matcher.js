@@ -1,6 +1,6 @@
 (function registerResponseMatcher(global) {
   function isRelationshipResponse(url) {
-    return /\/TweetDetail(?:[/?]|$)|\/TweetResultByRestId(?:[/?]|$)|\/Users?ByRestIds?(?:[/?]|$)|\/BlueVerifiedFollowers(?:[/?]|$)/.test(String(url));
+    return /\/TweetDetail(?:[/?]|$)|\/TweetResultByRestId(?:[/?]|$)|\/Users?ByRestIds?(?:[/?]|$)|\/BlueVerifiedFollowers(?:[/?]|$)|\/Following(?:[/?]|$)/.test(String(url));
   }
 
   const api = { isRelationshipResponse };
