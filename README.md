@@ -2,25 +2,35 @@
 
 ![X Follow Status demo](assets/x-follow-status-demo.gif)
 
-An unpacked Manifest V3 Chrome/Chromium extension that adds one bilingual, two-line relationship badge next to each loaded post or reply on X:
+在 X 的帖子、评论和关注列表中，直接识别双方的关注关系。
 
-- Blue: `互关` / `Mutual follow`
-- Red: `未回关我` / `Not following you`
-- Yellow: `待回关他` / `You don't follow them`
-- Green: `新朋友` / `New friend`
+An unpacked Manifest V3 Chrome/Chromium extension that shows follow relationships directly on X. It reads the relationship data already loaded in your signed-in tab; it never follows, unfollows, or changes your account.
 
-It observes X's existing `TweetDetail`, `TweetResultByRestId`, and user-detail responses in the logged-in tab. It never sends a follow, unfollow, or other account action.
+## Posts and replies
 
-## Non-mutual follow highlight
+Each loaded post or reply gets one compact, bilingual two-line badge when both directions of the relationship are available:
 
-The extension adds a persistent red outline to non-mutual follows without changing your account. The outline stays visible on hover; it does not add a text label:
+| Relationship | Badge | Color |
+| --- | --- | --- |
+| You follow each other | `互关`<br>`Mutual follow` | Blue |
+| You follow them; they do not follow you | `未回关我`<br>`Not following you` | Red |
+| They follow you; you do not follow them | `待回关他`<br>`You don't follow them` | Yellow |
+| Neither account follows the other | `新朋友`<br>`New friend` | Green |
 
-- On `/<handle>/following`, it marks people you follow who do **not** follow you: `未关注你 / Not following you` (`following: true`, `followed_by: false`).
-- On `/<handle>/verified_followers`, it marks people you do **not** follow back: `你未关注 / You don't follow` (`following: false`).
+If either relationship direction is absent from X's loaded data, no badge is shown rather than guessing.
 
-It reads X's existing `Following` and `BlueVerifiedFollowers` responses; it never presses X's **Follow** or **Follow back** buttons.
+## Follow lists
 
-On `/<handle>/following`, the fixed, bilingual top-right button `滚动到下个没关注我的人 / Next non-follower` stops at the nearest next already-loaded red-outline account. It visits each red-outline account at most once for the current profile route. If none remains in the loaded list, it searches toward the bottom and stops as soon as X loads the next red-outline account.
+The extension adds a persistent red outline without changing your account. The outline stays visible on hover and does not add a text label:
+
+- On `/<handle>/following`, it marks people you follow who do **not** follow you (`following: true`, `followed_by: false`).
+- On `/<handle>/verified_followers`, it marks people you do **not** follow back (`following: false`).
+
+On `/<handle>/following`, use the fixed top-right button `滚动到下个没关注我的人 / Next non-follower` to find the next red-outline account. Each account is visited at most once on the current profile route. When none of the already-loaded accounts remains, the page scrolls down and stops as soon as X loads the next match.
+
+## How it works
+
+It observes X's existing `TweetDetail`, `TweetResultByRestId`, user-detail, `Following`, and `BlueVerifiedFollowers` responses in the logged-in tab. It does not make follow or unfollow requests.
 
 ## Install locally
 
