@@ -44,3 +44,28 @@
   box-shadow: inset 0 0 0 3px rgb(244, 33, 46) !important;
   position: relative;
 }
+
+[data-testid="primaryColumn"] {
+  position: relative;
+}
+
+.x-follow-status__next-button {
+  background: rgb(15, 20, 25);
+  border: 1px solid rgb(83, 100, 113);
+  border-radius: 999px;
+  color: rgb(231, 233, 234);
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 12px;
+  position: absolute;
+  right: 16px;
+  top: 14px;
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.x-follow-status__next-button:hover {
+  background: rgb(39, 44, 48);
+}

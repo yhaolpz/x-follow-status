@@ -2,6 +2,7 @@
   const MESSAGE_SOURCE = "x-follow-status-extension";
   const relationships = new Map();
   let refreshQueued = false;
+  let lastScrolledUserCell = null;
 
   function normalizeHandle(handle) {
     return typeof handle === "string" ? handle.trim().replace(/^@/, "").toLowerCase() : "";
@@ -125,10 +126,49 @@
     setNotFollowingHighlight(userCell, shouldHighlight);
   }
 
+  function scrollToNextNonFollower() {
+    const highlightedCells = [...document.querySelectorAll('[data-testid="UserCell"].x-follow-status--not-following')];
+    const lastIndex = highlightedCells.indexOf(lastScrolledUserCell);
+    const nextCell =
+      lastIndex >= 0
+        ? highlightedCells.slice(lastIndex + 1).find((cell) => cell.getBoundingClientRect().height > 0)
+        : highlightedCells.find((cell) => cell.getBoundingClientRect().top > 120 && cell.getBoundingClientRect().height > 0);
+
+    if (nextCell) {
+      lastScrolledUserCell = nextCell;
+      nextCell.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    lastScrolledUserCell = null;
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+  }
+
+  function renderNextNonFollowerButton() {
+    const existingButton = document.querySelector(".x-follow-status__next-button");
+    const primaryColumn = document.querySelector('[data-testid="primaryColumn"]');
+
+    if (!isFollowingPage() || !primaryColumn) {
+      existingButton?.remove();
+      return;
+    }
+
+    if (existingButton) return;
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "x-follow-status__next-button";
+    button.textContent = "滚动到下个没关注我的人";
+    button.setAttribute("aria-label", "滚动到下个没有关注我的人");
+    button.addEventListener("click", scrollToNextNonFollower);
+    primaryColumn.appendChild(button);
+  }
+
   function refresh() {
     refreshQueued = false;
     document.querySelectorAll('article[data-testid="tweet"]').forEach(renderArticle);
     document.querySelectorAll('[data-testid="UserCell"]').forEach(renderUserCell);
+    renderNextNonFollowerButton();
   }
 
   function queueRefresh() {

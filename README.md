@@ -18,6 +18,8 @@ The extension adds a persistent red outline to non-mutual follows without changi
 
 It reads X's existing `Following` and `BlueVerifiedFollowers` responses; it never presses X's **Follow** or **Follow back** buttons.
 
+On `/<handle>/following`, the top-right button `滚动到下个没关注我的人` scrolls to the next already-loaded red-outline account. If none remains in the loaded list, it scrolls to the bottom to let X load more accounts.
+
 ## Install locally
 
 1. Open `chrome://extensions`.
