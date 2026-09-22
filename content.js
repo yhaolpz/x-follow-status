@@ -4,7 +4,8 @@
   if (!display) return;
   const relationships = new Map();
   let refreshQueued = false;
-  let lastScrolledHandle = "";
+  const visitedNonFollowerHandles = new Set();
+  let navigationPath = "";
   let seekingNonFollower = false;
 
   function normalizeHandle(handle) {
@@ -111,23 +112,37 @@
     return backButton?.parentElement?.parentElement ?? null;
   }
 
+  function resetNavigationCursorForPath() {
+    const path = window.location.pathname;
+    if (path === navigationPath) return;
+
+    navigationPath = path;
+    visitedNonFollowerHandles.clear();
+    seekingNonFollower = false;
+  }
+
   function nextHighlightedUserCell() {
     const headerBottom = followingHeader()?.getBoundingClientRect().bottom ?? 108;
 
     return [...document.querySelectorAll('[data-testid="UserCell"].x-follow-status--not-following')]
       .map((cell) => ({ cell, handle: userCellHandle(cell), rect: cell.getBoundingClientRect() }))
-      .filter(({ handle, rect }) => handle !== lastScrolledHandle && rect.height > 0 && rect.bottom > headerBottom + 8)
+      .filter(
+        ({ handle, rect }) =>
+          handle && !visitedNonFollowerHandles.has(handle) && rect.height > 0 && rect.bottom > headerBottom + 8
+      )
       .sort((a, b) => a.rect.top - b.rect.top)[0]?.cell;
   }
 
   function focusNonFollower(userCell, behavior = "smooth") {
-    lastScrolledHandle = userCellHandle(userCell);
+    const handle = userCellHandle(userCell);
+    if (handle) visitedNonFollowerHandles.add(handle);
     seekingNonFollower = false;
     window.scrollTo({ top: window.scrollY, behavior: "auto" });
     userCell.scrollIntoView({ behavior, block: "center" });
   }
 
   function scrollToNextNonFollower() {
+    resetNavigationCursorForPath();
     const nextCell = nextHighlightedUserCell();
 
     if (nextCell) {
@@ -140,6 +155,7 @@
   }
 
   function renderNextNonFollowerButton() {
+    resetNavigationCursorForPath();
     const existingButton = document.querySelector(".x-follow-status__next-button");
     const header = followingHeader();
 

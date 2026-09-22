@@ -20,7 +20,7 @@ The extension adds a persistent red outline to non-mutual follows without changi
 
 It reads X's existing `Following` and `BlueVerifiedFollowers` responses; it never presses X's **Follow** or **Follow back** buttons.
 
-On `/<handle>/following`, the fixed, bilingual top-right button `滚动到下个没关注我的人 / Next non-follower` stops at the nearest next already-loaded red-outline account. If none remains in the loaded list, it searches toward the bottom and stops as soon as X loads the next red-outline account.
+On `/<handle>/following`, the fixed, bilingual top-right button `滚动到下个没关注我的人 / Next non-follower` stops at the nearest next already-loaded red-outline account. It visits each red-outline account at most once for the current profile route. If none remains in the loaded list, it searches toward the bottom and stops as soon as X loads the next red-outline account.
 
 ## Install locally
 
