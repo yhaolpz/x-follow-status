@@ -2,10 +2,12 @@
 
 ![X Follow Status demo](assets/x-follow-status-demo.gif)
 
-An unpacked Manifest V3 Chrome/Chromium extension that adds two bilingual, two-line badges next to each loaded post or reply on X:
+An unpacked Manifest V3 Chrome/Chromium extension that adds one bilingual, two-line relationship badge next to each loaded post or reply on X:
 
-- `我已关注他` / `我未关注他` with `You follow them` / `You don't follow them`
-- `他已关注我` / `他未关注我` with `They follow you` / `They don't follow you`
+- Blue: `互关` / `Mutual follow`
+- Red: `未回关我` / `Not following you`
+- Yellow: `待回关他` / `You don't follow them`
+- Green: `新朋友` / `New friend`
 
 It observes X's existing `TweetDetail`, `TweetResultByRestId`, and user-detail responses in the logged-in tab. It never sends a follow, unfollow, or other account action.
 
@@ -42,6 +44,7 @@ The extension only sees new X responses after it has loaded. X's internal GraphQ
 node --test relationship-parser.test.js
 node --check relationship-parser.js
 node --check response-matcher.js
+node --check relationship-display.js
 node --check page-hook.js
 node --check content.js
 node -e 'JSON.parse(require("node:fs").readFileSync("manifest.json", "utf8"))'

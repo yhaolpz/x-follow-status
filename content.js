@@ -1,5 +1,7 @@
 (function renderFollowStatus() {
   const MESSAGE_SOURCE = "x-follow-status-extension";
+  const display = globalThis.XFollowStatusDisplay;
+  if (!display) return;
   const relationships = new Map();
   let refreshQueued = false;
   let lastScrolledHandle = "";
@@ -51,43 +53,19 @@
     return /^\/[^/]+\/following\/?$/.test(window.location.pathname);
   }
 
-  function statusCopy(value, yes, no) {
-    return value === true ? yes : value === false ? no : { primary: "状态未知", secondary: "Unknown" };
+  function updateBadge(badge, status) {
+    badge.querySelector(".x-follow-status__primary").textContent = status.primary;
+    badge.querySelector(".x-follow-status__secondary").textContent = status.secondary;
+    badge.dataset.state = status.key;
+    badge.setAttribute("aria-label", `${status.primary} / ${status.secondary}`);
   }
 
-  function updateStatus(element, value, yes, no) {
-    const copy = statusCopy(value, yes, no);
-    element.querySelector(".x-follow-status__primary").textContent = copy.primary;
-    element.querySelector(".x-follow-status__secondary").textContent = copy.secondary;
-    element.dataset.state = value === true ? "yes" : value === false ? "no" : "unknown";
-  }
-
-  function updateBadge(badge, relationship) {
-    const following = badge.querySelector(".x-follow-status__following");
-    const followedBy = badge.querySelector(".x-follow-status__followed-by");
-
-    updateStatus(
-      following,
-      relationship.following,
-      { primary: "我已关注他", secondary: "You follow them" },
-      { primary: "我未关注他", secondary: "You don't follow them" }
-    );
-    updateStatus(
-      followedBy,
-      relationship.followedBy,
-      { primary: "他已关注我", secondary: "They follow you" },
-      { primary: "他未关注我", secondary: "They don't follow you" }
-    );
-  }
-
-  function createBadge(relationship) {
+  function createBadge(status) {
     const badge = document.createElement("span");
     badge.className = "x-follow-status";
-    badge.setAttribute("aria-label", `@${relationship.handle} 的互相关注状态`);
     badge.innerHTML =
-      '<span class="x-follow-status__following"><span class="x-follow-status__primary"></span><span class="x-follow-status__secondary"></span></span>' +
-      '<span class="x-follow-status__followed-by"><span class="x-follow-status__primary"></span><span class="x-follow-status__secondary"></span></span>';
-    updateBadge(badge, relationship);
+      '<span class="x-follow-status__badge"><span class="x-follow-status__primary"></span><span class="x-follow-status__secondary"></span></span>';
+    updateBadge(badge, status);
     return badge;
   }
 
@@ -95,20 +73,21 @@
     const handle = commenterHandle(article);
     const relationship = relationships.get(handle);
     const existing = article.querySelector(".x-follow-status");
+    const status = display.relationshipStatus(relationship);
 
-    if (!handle || handle === viewerHandle() || !relationship) {
+    if (!handle || handle === viewerHandle() || !status) {
       existing?.remove();
       return;
     }
 
     if (existing) {
-      updateBadge(existing, relationship);
+      updateBadge(existing, status);
       return;
     }
 
     const userName = article.querySelector('[data-testid="User-Name"]');
     if (!userName) return;
-    userName.appendChild(createBadge(relationship));
+    userName.appendChild(createBadge(status));
   }
 
   function setNotFollowingHighlight(userCell, shouldHighlight) {
