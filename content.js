@@ -2,7 +2,8 @@
   const MESSAGE_SOURCE = "x-follow-status-extension";
   const relationships = new Map();
   let refreshQueued = false;
-  let lastScrolledUserCell = null;
+  let lastScrolledHandle = "";
+  let seekingNonFollower = false;
 
   function normalizeHandle(handle) {
     return typeof handle === "string" ? handle.trim().replace(/^@/, "").toLowerCase() : "";
@@ -126,27 +127,37 @@
     setNotFollowingHighlight(userCell, shouldHighlight);
   }
 
-  function scrollToNextNonFollower() {
-    const highlightedCells = [...document.querySelectorAll('[data-testid="UserCell"].x-follow-status--not-following')];
-    const lastIndex = highlightedCells.indexOf(lastScrolledUserCell);
-    const nextCell =
-      lastIndex >= 0
-        ? highlightedCells.slice(lastIndex + 1).find((cell) => cell.getBoundingClientRect().height > 0)
-        : highlightedCells.find((cell) => cell.getBoundingClientRect().top > 120 && cell.getBoundingClientRect().height > 0);
-
-    if (nextCell) {
-      lastScrolledUserCell = nextCell;
-      nextCell.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
-    }
-
-    lastScrolledUserCell = null;
-    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
-  }
-
   function followingHeader() {
     const backButton = document.querySelector('[data-testid="app-bar-back"]');
     return backButton?.parentElement?.parentElement ?? null;
+  }
+
+  function nextHighlightedUserCell() {
+    const headerBottom = followingHeader()?.getBoundingClientRect().bottom ?? 108;
+
+    return [...document.querySelectorAll('[data-testid="UserCell"].x-follow-status--not-following')]
+      .map((cell) => ({ cell, handle: userCellHandle(cell), rect: cell.getBoundingClientRect() }))
+      .filter(({ handle, rect }) => handle !== lastScrolledHandle && rect.height > 0 && rect.bottom > headerBottom + 8)
+      .sort((a, b) => a.rect.top - b.rect.top)[0]?.cell;
+  }
+
+  function focusNonFollower(userCell, behavior = "smooth") {
+    lastScrolledHandle = userCellHandle(userCell);
+    seekingNonFollower = false;
+    window.scrollTo({ top: window.scrollY, behavior: "auto" });
+    userCell.scrollIntoView({ behavior, block: "center" });
+  }
+
+  function scrollToNextNonFollower() {
+    const nextCell = nextHighlightedUserCell();
+
+    if (nextCell) {
+      focusNonFollower(nextCell);
+      return;
+    }
+
+    seekingNonFollower = true;
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
   }
 
   function renderNextNonFollowerButton() {
@@ -179,6 +190,11 @@
     document.querySelectorAll('article[data-testid="tweet"]').forEach(renderArticle);
     document.querySelectorAll('[data-testid="UserCell"]').forEach(renderUserCell);
     renderNextNonFollowerButton();
+
+    if (seekingNonFollower) {
+      const nextCell = nextHighlightedUserCell();
+      if (nextCell) focusNonFollower(nextCell, "auto");
+    }
   }
 
   function queueRefresh() {
