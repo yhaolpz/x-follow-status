@@ -11,7 +11,7 @@ It observes X's existing `TweetDetail`, `TweetResultByRestId`, and user-detail r
 
 ## Non-mutual follow highlight
 
-The extension adds a red outline to non-mutual follows without changing your account:
+The extension adds a persistent red outline to non-mutual follows without changing your account. The outline stays visible on hover; it does not add a text label:
 
 - On `/<handle>/following`, it marks people you follow who do **not** follow you: `未关注你 / Not following you` (`following: true`, `followed_by: false`).
 - On `/<handle>/verified_followers`, it marks people you do **not** follow back: `你未关注 / You don't follow` (`following: false`).

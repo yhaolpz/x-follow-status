@@ -109,46 +109,20 @@
     userName.appendChild(createBadge(relationship));
   }
 
-  function setNotFollowingHighlight(userCell, copy) {
-    userCell.classList.toggle("x-follow-status--not-following", Boolean(copy));
-    const existingLabel = userCell.querySelector(":scope > .x-follow-status__not-following-label");
-
-    if (!copy) {
-      existingLabel?.remove();
-      return;
-    }
-
-    if (existingLabel) {
-      const primary = existingLabel.querySelector(".x-follow-status__not-following-primary");
-      const secondary = existingLabel.querySelector(".x-follow-status__not-following-secondary");
-      if (primary.textContent !== copy.primary) primary.textContent = copy.primary;
-      if (secondary.textContent !== copy.secondary) secondary.textContent = copy.secondary;
-      return;
-    }
-
-    const label = document.createElement("span");
-    label.className = "x-follow-status__not-following-label";
-    label.setAttribute("aria-hidden", "true");
-    label.innerHTML =
-      '<span class="x-follow-status__not-following-primary"></span>' +
-      '<span class="x-follow-status__not-following-secondary"></span>';
-    label.querySelector(".x-follow-status__not-following-primary").textContent = copy.primary;
-    label.querySelector(".x-follow-status__not-following-secondary").textContent = copy.secondary;
-    userCell.appendChild(label);
+  function setNotFollowingHighlight(userCell, shouldHighlight) {
+    userCell.classList.toggle("x-follow-status--not-following", shouldHighlight);
+    userCell.querySelector(":scope > .x-follow-status__not-following-label")?.remove();
   }
 
   function renderUserCell(userCell) {
     const handle = userCellHandle(userCell);
     const relationship = relationships.get(handle);
     const isOtherUser = handle && handle !== viewerHandle();
-    const copy =
-      isOtherUser && isVerifiedFollowersPage() && relationship?.following === false
-        ? { primary: "你未关注", secondary: "You don't follow" }
-        : isOtherUser && isFollowingPage() && relationship?.following === true && relationship?.followedBy === false
-          ? { primary: "未关注你", secondary: "Not following you" }
-          : null;
+    const shouldHighlight =
+      (isOtherUser && isVerifiedFollowersPage() && relationship?.following === false) ||
+      (isOtherUser && isFollowingPage() && relationship?.following === true && relationship?.followedBy === false);
 
-    setNotFollowingHighlight(userCell, copy);
+    setNotFollowingHighlight(userCell, shouldHighlight);
   }
 
   function refresh() {
