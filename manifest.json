@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
   "name": "X Follow Status",
-  "version": "0.1.0",
-  "description": "Show mutual follow status beside posts and replies on X.",
+  "version": "0.2.0",
+  "description": "Show mutual follow status and un-followed verified followers on X.",
   "content_scripts": [
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["relationship-parser.js", "page-hook.js"],
+      "js": ["relationship-parser.js", "response-matcher.js", "page-hook.js"],
       "run_at": "document_start",
       "world": "MAIN"
     },

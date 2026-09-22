@@ -33,6 +33,18 @@
     return "";
   }
 
+  function userCellHandle(userCell) {
+    for (const link of userCell.querySelectorAll("a[href]")) {
+      const handle = handleFromProfileLink(link);
+      if (handle) return handle;
+    }
+    return "";
+  }
+
+  function isVerifiedFollowersPage() {
+    return /^\/[^/]+\/verified_followers\/?$/.test(window.location.pathname);
+  }
+
   function statusCopy(value, yes, no) {
     return value === true ? yes : value === false ? no : { primary: "状态未知", secondary: "Unknown" };
   }
@@ -93,9 +105,39 @@
     userName.appendChild(createBadge(relationship));
   }
 
+  function setNotFollowingHighlight(userCell, shouldHighlight) {
+    userCell.classList.toggle("x-follow-status--not-following", shouldHighlight);
+    const existingLabel = userCell.querySelector(":scope > .x-follow-status__not-following-label");
+
+    if (!shouldHighlight) {
+      existingLabel?.remove();
+      return;
+    }
+
+    if (existingLabel) return;
+
+    const label = document.createElement("span");
+    label.className = "x-follow-status__not-following-label";
+    label.setAttribute("aria-hidden", "true");
+    label.innerHTML = '<span>未关注</span><span>Not following</span>';
+    userCell.appendChild(label);
+  }
+
+  function renderUserCell(userCell) {
+    const handle = userCellHandle(userCell);
+    const relationship = relationships.get(handle);
+    const shouldHighlight =
+      isVerifiedFollowersPage() &&
+      handle !== viewerHandle() &&
+      relationship?.following === false;
+
+    setNotFollowingHighlight(userCell, shouldHighlight);
+  }
+
   function refresh() {
     refreshQueued = false;
     document.querySelectorAll('article[data-testid="tweet"]').forEach(renderArticle);
+    document.querySelectorAll('[data-testid="UserCell"]').forEach(renderUserCell);
   }
 
   function queueRefresh() {

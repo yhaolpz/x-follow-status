@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { extractRelationships, normalizeHandle } = require("./relationship-parser.js");
+const { isRelationshipResponse } = require("./response-matcher.js");
 
 test("normalizes X handles", () => {
   assert.equal(normalizeHandle(" @Ahab_Developer "), "ahab_developer");
@@ -43,4 +44,12 @@ test("does not turn a missing relationship field into a false status", () => {
   };
 
   assert.deepEqual(extractRelationships(payload), [{ handle: "partial", following: true, followedBy: null }]);
+});
+
+test("recognizes the verified followers response", () => {
+  assert.equal(
+    isRelationshipResponse("https://x.com/i/api/graphql/hash/BlueVerifiedFollowers?variables=%7B%7D"),
+    true
+  );
+  assert.equal(isRelationshipResponse("https://x.com/i/api/graphql/hash/ExploreSidebar?variables=%7B%7D"), false);
 });

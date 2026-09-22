@@ -9,6 +9,10 @@ An unpacked Manifest V3 Chrome/Chromium extension that adds two bilingual, two-l
 
 It observes X's existing `TweetDetail`, `TweetResultByRestId`, and user-detail responses in the logged-in tab. It never sends a follow, unfollow, or other account action.
 
+## Verified followers highlight
+
+On a profile's `/<handle>/verified_followers` page, the extension gives any person you do **not** follow back a red outline and a `未关注 / Not following` label. It uses the `following: false` relationship field from X's existing `BlueVerifiedFollowers` response; it does not press X's **Follow back** button.
+
 ## Install locally
 
 1. Open `chrome://extensions`.
@@ -30,6 +34,7 @@ The extension only sees new X responses after it has loaded. X's internal GraphQ
 ```sh
 node --test relationship-parser.test.js
 node --check relationship-parser.js
+node --check response-matcher.js
 node --check page-hook.js
 node --check content.js
 node -e 'JSON.parse(require("node:fs").readFileSync("manifest.json", "utf8"))'

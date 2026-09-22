@@ -1,13 +1,10 @@
 (function installXResponseHook() {
   const MESSAGE_SOURCE = "x-follow-status-extension";
   const parser = window.XFollowStatusParser;
+  const responseMatcher = window.XFollowStatusResponseMatcher;
 
-  if (!parser || window.__xFollowStatusHookInstalled) return;
+  if (!parser || !responseMatcher || window.__xFollowStatusHookInstalled) return;
   window.__xFollowStatusHookInstalled = true;
-
-  function isRelationshipResponse(url) {
-    return /\/TweetDetail(?:[/?]|$)|\/TweetResultByRestId(?:[/?]|$)|\/Users?ByRestIds?(?:[/?]|$)/.test(String(url));
-  }
 
   function publish(payload) {
     const relationships = parser.extractRelationships(payload);
@@ -24,7 +21,7 @@
   }
 
   function inspectFetchResponse(url, response) {
-    if (!isRelationshipResponse(url) || !response?.ok) return;
+    if (!responseMatcher.isRelationshipResponse(url) || !response?.ok) return;
 
     response
       .clone()
@@ -53,7 +50,7 @@
     this.addEventListener(
       "load",
       () => {
-        if (!isRelationshipResponse(this.__xFollowStatusUrl) || this.status < 200 || this.status >= 300) return;
+        if (!responseMatcher.isRelationshipResponse(this.__xFollowStatusUrl) || this.status < 200 || this.status >= 300) return;
 
         try {
           publish(this.responseType === "json" ? this.response : JSON.parse(this.responseText));
