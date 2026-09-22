@@ -144,24 +144,34 @@
     window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
   }
 
+  function followingHeader() {
+    const backButton = document.querySelector('[data-testid="app-bar-back"]');
+    return backButton?.parentElement?.parentElement ?? null;
+  }
+
   function renderNextNonFollowerButton() {
     const existingButton = document.querySelector(".x-follow-status__next-button");
-    const primaryColumn = document.querySelector('[data-testid="primaryColumn"]');
+    const header = followingHeader();
 
-    if (!isFollowingPage() || !primaryColumn) {
+    if (!isFollowingPage() || !header) {
       existingButton?.remove();
       return;
     }
 
-    if (existingButton) return;
+    if (existingButton) {
+      if (existingButton.parentElement !== header) header.appendChild(existingButton);
+      return;
+    }
 
     const button = document.createElement("button");
     button.type = "button";
     button.className = "x-follow-status__next-button";
-    button.textContent = "滚动到下个没关注我的人";
+    button.innerHTML =
+      '<span class="x-follow-status__next-primary">滚动到下个没关注我的人</span>' +
+      '<span class="x-follow-status__next-secondary">Next non-follower</span>';
     button.setAttribute("aria-label", "滚动到下个没有关注我的人");
     button.addEventListener("click", scrollToNextNonFollower);
-    primaryColumn.appendChild(button);
+    header.appendChild(button);
   }
 
   function refresh() {
