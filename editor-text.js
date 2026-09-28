@@ -26,6 +26,7 @@
     const windowRef = options.windowRef ?? global;
 
     return {
+      documentRef,
       windowRef,
       nextFrame: options.nextFrame ?? (() => defaultNextFrame(windowRef)),
       execCommand:
@@ -41,12 +42,19 @@
     }
   }
 
-  function selectEntireEditor(editor, env) {
+  async function selectEntireEditor(editor, env) {
     focusEditor(editor);
-    env.execCommand("selectAll");
+    const selection = env.windowRef.getSelection();
+    const range = env.documentRef.createRange();
+    range.selectNodeContents(editor);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    await env.nextFrame();
+    await env.nextFrame();
 
     const currentText = readEditorText(editor);
-    const selectedText = normalizeText(env.windowRef.getSelection()?.toString());
+    const selectedText = normalizeText(selection?.toString());
     return Boolean(currentText) && selectedText === currentText;
   }
 
@@ -63,7 +71,7 @@
   }
 
   async function replaceOnce(editor, text, env) {
-    if (!selectEntireEditor(editor, env)) return false;
+    if (!(await selectEntireEditor(editor, env))) return false;
 
     env.execCommand("insertText", text);
     env.windowRef.getSelection()?.removeAllRanges();

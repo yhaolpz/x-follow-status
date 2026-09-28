@@ -9,6 +9,8 @@
   let navigationPath = "";
   let seekingNonFollower = false;
   const TRANSLATE_MESSAGE_TYPE = "translate-draft-to-english";
+  const translationStates = new WeakMap();
+  let translationRequestId = 0;
 
   function normalizeHandle(handle) {
     return typeof handle === "string" ? handle.trim().replace(/^@/, "").toLowerCase() : "";
@@ -87,7 +89,7 @@
     });
   }
 
-  function setTranslateButtonState(button, state, label, title) {
+  function applyTranslateButtonState(button, state, label, title) {
     button.dataset.state = state;
     button.textContent = label;
     button.title = title;
@@ -95,28 +97,52 @@
     button.disabled = state === "loading";
   }
 
-  function resetTranslateButton(button) {
-    setTranslateButtonState(button, "idle", "Trans", "Translate this draft to English with Google Translate");
+  function setTranslateState(editor, state, label, title, requestId) {
+    const value = { state, label, title, requestId };
+    translationStates.set(editor, value);
+    document.querySelectorAll(".x-follow-status__translate-button").forEach((button) => {
+      if (button.xFollowStatusEditor === editor) applyTranslateButtonState(button, state, label, title);
+    });
   }
 
-  async function handleTranslateDraft(button, editor) {
+  function resetTranslateState(editor, requestId) {
+    if (translationStates.get(editor)?.requestId !== requestId) return;
+    translationStates.delete(editor);
+    document.querySelectorAll(".x-follow-status__translate-button").forEach((button) => {
+      if (button.xFollowStatusEditor === editor) {
+        applyTranslateButtonState(button, "idle", "Trans", "Translate this draft to English with Google Translate");
+      }
+    });
+  }
+
+  async function handleTranslateDraft(editor) {
+    if (translationStates.get(editor)?.state === "loading") return;
+
     const source = editorText(editor);
     if (!source) {
-      setTranslateButtonState(button, "error", "Empty", "Write a post or reply before translating it");
-      window.setTimeout(() => resetTranslateButton(button), 1400);
+      const requestId = ++translationRequestId;
+      setTranslateState(editor, "error", "Empty", "Write a post or reply before translating it", requestId);
+      window.setTimeout(() => resetTranslateState(editor, requestId), 1400);
       return;
     }
 
-    setTranslateButtonState(button, "loading", "Trans…", "Translating draft to English");
+    const requestId = ++translationRequestId;
+    setTranslateState(editor, "loading", "Trans…", "Translating draft to English", requestId);
     try {
       const translation = await translateDraft(source);
       await editorTextApi.replaceEditorText(editor, translation);
-      setTranslateButtonState(button, "success", "Done", "Draft translated to English");
+      setTranslateState(editor, "success", "Done", "Draft translated to English", requestId);
     } catch (error) {
       console.warn("X Follow Status: draft translation failed", error);
-      setTranslateButtonState(button, "error", "Retry", error instanceof Error ? error.message : "Translation failed");
+      setTranslateState(
+        editor,
+        "error",
+        "Retry",
+        error instanceof Error ? error.message : "Translation failed",
+        requestId
+      );
     }
-    window.setTimeout(() => resetTranslateButton(button), 1600);
+    window.setTimeout(() => resetTranslateState(editor, requestId), 1600);
   }
 
   function renderTranslateButtons() {
@@ -129,8 +155,15 @@
       button.type = "button";
       button.className = "x-follow-status__translate-button notranslate";
       button.translate = false;
-      resetTranslateButton(button);
-      button.addEventListener("click", () => handleTranslateDraft(button, editor));
+      button.dataset.extensionVersion = chrome.runtime.getManifest().version;
+      button.xFollowStatusEditor = editor;
+      const currentState = translationStates.get(editor);
+      if (currentState) {
+        applyTranslateButtonState(button, currentState.state, currentState.label, currentState.title);
+      } else {
+        applyTranslateButtonState(button, "idle", "Trans", "Translate this draft to English with Google Translate");
+      }
+      button.addEventListener("click", () => handleTranslateDraft(editor));
       buttonContainer.insertBefore(button, submitButton);
     });
   }

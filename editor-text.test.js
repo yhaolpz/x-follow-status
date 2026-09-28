@@ -10,6 +10,9 @@ function testHarness(initialText, commandHandler, selectedTextForEditor = (edito
   };
   let selectedText = "";
   const selection = {
+    addRange() {
+      selectedText = selectedTextForEditor(editor);
+    },
     removeAllRanges() {
       selectedText = "";
     },
@@ -17,15 +20,17 @@ function testHarness(initialText, commandHandler, selectedTextForEditor = (edito
       return selectedText;
     }
   };
+  const range = {
+    selectNodeContents() {}
+  };
 
   return {
     editor,
     options: {
-      documentRef: {},
+      documentRef: { createRange: () => range },
       windowRef: { getSelection: () => selection },
       nextFrame: async () => {},
       execCommand: (command, value) => {
-        if (command === "selectAll") selectedText = selectedTextForEditor(editor);
         commandHandler({ command, value, editor, selectedText });
       }
     }
@@ -44,7 +49,7 @@ test("replaceEditorText atomically replaces a multiline draft containing a link"
   await editorText.replaceEditorText(editor, translation, options);
 
   assert.equal(editor.innerText, translation);
-  assert.deepEqual(commands, ["selectAll", "insertText"]);
+  assert.deepEqual(commands, ["insertText"]);
   assert.ok(!commands.includes("delete"));
 });
 
