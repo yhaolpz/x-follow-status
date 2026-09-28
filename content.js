@@ -7,6 +7,7 @@
   const visitedNonFollowerHandles = new Set();
   let navigationPath = "";
   let seekingNonFollower = false;
+  const TRANSLATE_MESSAGE_TYPE = "translate-draft-to-english";
 
   function normalizeHandle(handle) {
     return typeof handle === "string" ? handle.trim().replace(/^@/, "").toLowerCase() : "";
@@ -52,6 +53,99 @@
 
   function isFollowingPage() {
     return /^\/[^/]+\/following\/?$/.test(window.location.pathname);
+  }
+
+  function composerEditorForButton(submitButton) {
+    let container = submitButton.parentElement;
+
+    while (container && container !== document.body) {
+      const editor = container.querySelector('[data-testid^="tweetTextarea_"][contenteditable="true"]');
+      if (editor) return editor;
+      container = container.parentElement;
+    }
+    return null;
+  }
+
+  function editorText(editor) {
+    return editor.innerText.replace(/\u00a0/g, " ").trim();
+  }
+
+  function replaceEditorText(editor, text) {
+    editor.focus();
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(editor);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    if (!document.execCommand("insertText", false, text)) {
+      selection.removeAllRanges();
+      throw new Error("X did not accept the translated text.");
+    }
+    selection.removeAllRanges();
+  }
+
+  function translateDraft(text) {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage({ type: TRANSLATE_MESSAGE_TYPE, text }, (response) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
+        if (!response?.ok || typeof response.translation !== "string") {
+          reject(new Error(response?.error || "Translation failed."));
+          return;
+        }
+        resolve(response.translation);
+      });
+    });
+  }
+
+  function setTranslateButtonState(button, state, label, title) {
+    button.dataset.state = state;
+    button.textContent = label;
+    button.title = title;
+    button.setAttribute("aria-label", title);
+    button.disabled = state === "loading";
+  }
+
+  function resetTranslateButton(button) {
+    setTranslateButtonState(button, "idle", "Trans", "Translate this draft to English with Google Translate");
+  }
+
+  async function handleTranslateDraft(button, editor) {
+    const source = editorText(editor);
+    if (!source) {
+      setTranslateButtonState(button, "error", "Empty", "Write a post or reply before translating it");
+      window.setTimeout(() => resetTranslateButton(button), 1400);
+      return;
+    }
+
+    setTranslateButtonState(button, "loading", "Trans…", "Translating draft to English");
+    try {
+      const translation = await translateDraft(source);
+      replaceEditorText(editor, translation);
+      setTranslateButtonState(button, "success", "Done", "Draft translated to English");
+    } catch (error) {
+      console.warn("X Follow Status: draft translation failed", error);
+      setTranslateButtonState(button, "error", "Retry", error instanceof Error ? error.message : "Translation failed");
+    }
+    window.setTimeout(() => resetTranslateButton(button), 1600);
+  }
+
+  function renderTranslateButtons() {
+    document.querySelectorAll('[data-testid="tweetButton"], [data-testid="tweetButtonInline"]').forEach((submitButton) => {
+      const buttonContainer = submitButton.parentElement;
+      const editor = composerEditorForButton(submitButton);
+      if (!buttonContainer || !editor || buttonContainer.querySelector(":scope > .x-follow-status__translate-button")) return;
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "x-follow-status__translate-button";
+      resetTranslateButton(button);
+      button.addEventListener("click", () => handleTranslateDraft(button, editor));
+      buttonContainer.insertBefore(button, submitButton);
+    });
   }
 
   function updateBadge(badge, status) {
@@ -185,6 +279,7 @@
     document.querySelectorAll('article[data-testid="tweet"]').forEach(renderArticle);
     document.querySelectorAll('[data-testid="UserCell"]').forEach(renderUserCell);
     renderNextNonFollowerButton();
+    renderTranslateButtons();
 
     if (seekingNonFollower) {
       const nextCell = nextHighlightedUserCell();

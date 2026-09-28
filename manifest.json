@@ -1,8 +1,12 @@
 {
   "manifest_version": 3,
   "name": "X Follow Status",
-  "version": "0.7.1",
-  "description": "Show mutual follow status and non-mutual follows on X.",
+  "version": "0.8.0",
+  "description": "Show follow relationships on X and translate post or reply drafts to English.",
+  "host_permissions": ["https://translate.googleapis.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],

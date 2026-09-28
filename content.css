@@ -85,3 +85,41 @@
   font-weight: 600;
   opacity: 0.82;
 }
+
+.x-follow-status__translate-button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid rgb(207, 217, 222);
+  border-radius: 999px;
+  color: rgb(29, 155, 240);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  height: 36px;
+  justify-content: center;
+  margin-inline-end: 8px;
+  min-width: 64px;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.x-follow-status__translate-button:hover:not(:disabled) {
+  background: rgba(29, 155, 240, 0.1);
+}
+
+.x-follow-status__translate-button:disabled {
+  cursor: default;
+  opacity: 0.62;
+}
+
+.x-follow-status__translate-button[data-state="success"] {
+  border-color: rgb(0, 186, 124);
+  color: rgb(0, 150, 100);
+}
+
+.x-follow-status__translate-button[data-state="error"] {
+  border-color: rgb(244, 33, 46);
+  color: rgb(217, 40, 52);
+}
