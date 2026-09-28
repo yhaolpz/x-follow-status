@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X Follow Status",
-  "version": "0.8.3",
+  "version": "0.8.4",
   "description": "Show follow relationships on X and translate post or reply drafts to English.",
   "host_permissions": ["https://translate.googleapis.com/*"],
   "background": {
@@ -16,7 +16,7 @@
     },
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["relationship-display.js", "editor-text.js", "content.js"],
+      "js": ["relationship-display.js", "runtime-bridge.js", "editor-text.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_start"
     }

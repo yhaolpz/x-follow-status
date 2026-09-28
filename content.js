@@ -2,7 +2,8 @@
   const MESSAGE_SOURCE = "x-follow-status-extension";
   const display = globalThis.XFollowStatusDisplay;
   const editorTextApi = globalThis.XFollowStatusEditorText;
-  if (!display || !editorTextApi) return;
+  const runtimeBridge = globalThis.XFollowStatusRuntimeBridge;
+  if (!display || !editorTextApi || !runtimeBridge) return;
   const relationships = new Map();
   let refreshQueued = false;
   const visitedNonFollowerHandles = new Set();
@@ -73,20 +74,12 @@
     return editorTextApi.readEditorText(editor);
   }
 
-  function translateDraft(text) {
-    return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage({ type: TRANSLATE_MESSAGE_TYPE, text }, (response) => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-          return;
-        }
-        if (!response?.ok || typeof response.translation !== "string") {
-          reject(new Error(response?.error || "Translation failed."));
-          return;
-        }
-        resolve(response.translation);
-      });
-    });
+  async function translateDraft(text) {
+    const response = await runtimeBridge.sendMessage({ type: TRANSLATE_MESSAGE_TYPE, text });
+    if (!response?.ok || typeof response.translation !== "string") {
+      throw new Error(response?.error || "Translation failed.");
+    }
+    return response.translation;
   }
 
   function applyTranslateButtonState(button, state, label, title) {
@@ -133,6 +126,11 @@
       await editorTextApi.replaceEditorText(editor, translation);
       setTranslateState(editor, "success", "Done", "Draft translated to English", requestId);
     } catch (error) {
+      if (runtimeBridge.isContextInvalidated(error)) {
+        translationStates.delete(editor);
+        document.querySelectorAll(".x-follow-status__translate-button").forEach((button) => button.remove());
+        return;
+      }
       console.warn("X Follow Status: draft translation failed", error);
       setTranslateState(
         editor,
@@ -146,6 +144,11 @@
   }
 
   function renderTranslateButtons() {
+    if (!runtimeBridge.isAvailable()) {
+      document.querySelectorAll(".x-follow-status__translate-button").forEach((button) => button.remove());
+      return;
+    }
+
     document.querySelectorAll('[data-testid="tweetButton"], [data-testid="tweetButtonInline"]').forEach((submitButton) => {
       const buttonContainer = submitButton.parentElement;
       const editor = composerEditorForButton(submitButton);
@@ -155,7 +158,6 @@
       button.type = "button";
       button.className = "x-follow-status__translate-button notranslate";
       button.translate = false;
-      button.dataset.extensionVersion = chrome.runtime.getManifest().version;
       button.xFollowStatusEditor = editor;
       const currentState = translationStates.get(editor);
       if (currentState) {

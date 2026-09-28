@@ -58,10 +58,11 @@ The extension only sees new X responses after it has loaded. X's internal GraphQ
 ## Verify
 
 ```sh
-node --test relationship-parser.test.js translation-api.test.js editor-text.test.js
+node --test relationship-parser.test.js translation-api.test.js runtime-bridge.test.js editor-text.test.js
 node --check relationship-parser.js
 node --check response-matcher.js
 node --check relationship-display.js
+node --check runtime-bridge.js
 node --check editor-text.js
 node --check page-hook.js
 node --check content.js
