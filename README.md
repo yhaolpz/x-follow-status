@@ -58,14 +58,14 @@ The extension only sees new X responses after it has loaded. X's internal GraphQ
 ## Verify
 
 ```sh
-node --test relationship-parser.test.js
+node --test relationship-parser.test.js translation-api.test.js editor-text.test.js
 node --check relationship-parser.js
 node --check response-matcher.js
 node --check relationship-display.js
+node --check editor-text.js
 node --check page-hook.js
 node --check content.js
 node --check translation-api.js
 node --check background.js
-node --test translation-api.test.js
 node -e 'JSON.parse(require("node:fs").readFileSync("manifest.json", "utf8"))'
 ```

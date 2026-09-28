@@ -1,7 +1,8 @@
 (function renderFollowStatus() {
   const MESSAGE_SOURCE = "x-follow-status-extension";
   const display = globalThis.XFollowStatusDisplay;
-  if (!display) return;
+  const editorTextApi = globalThis.XFollowStatusEditorText;
+  if (!display || !editorTextApi) return;
   const relationships = new Map();
   let refreshQueued = false;
   const visitedNonFollowerHandles = new Set();
@@ -67,22 +68,7 @@
   }
 
   function editorText(editor) {
-    return editor.innerText.replace(/\u00a0/g, " ").trim();
-  }
-
-  function replaceEditorText(editor, text) {
-    editor.focus();
-    const selection = window.getSelection();
-    const range = document.createRange();
-    range.selectNodeContents(editor);
-    selection.removeAllRanges();
-    selection.addRange(range);
-
-    if (!document.execCommand("insertText", false, text)) {
-      selection.removeAllRanges();
-      throw new Error("X did not accept the translated text.");
-    }
-    selection.removeAllRanges();
+    return editorTextApi.readEditorText(editor);
   }
 
   function translateDraft(text) {
@@ -124,7 +110,7 @@
     setTranslateButtonState(button, "loading", "Trans…", "Translating draft to English");
     try {
       const translation = await translateDraft(source);
-      replaceEditorText(editor, translation);
+      await editorTextApi.replaceEditorText(editor, translation);
       setTranslateButtonState(button, "success", "Done", "Draft translated to English");
     } catch (error) {
       console.warn("X Follow Status: draft translation failed", error);
