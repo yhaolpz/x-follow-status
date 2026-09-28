@@ -43,7 +43,7 @@ It observes X's existing `TweetDetail`, `TweetResultByRestId`, user-detail, `Fol
 1. Open `chrome://extensions`.
 2. Enable **Developer mode**.
 3. Select **Load unpacked** and choose this directory.
-4. Open or return to X. The extension also updates already-open X tabs when the unpacked extension is reloaded.
+4. Open or return to X. Chrome refreshes already-open X tabs when the unpacked extension is installed or reloaded so stale content scripts cannot continue running.
 
 The extension only sees new X responses after it has loaded. X's internal GraphQL schema can change, so a future X web update may require adjusting the response matcher or relationship field path.
 
@@ -53,8 +53,8 @@ The extension only sees new X responses after it has loaded. X's internal GraphQ
 - Reads relationship fields already returned to the signed-in X tab; it does not call X's follow or unfollow endpoints.
 - When you select `Trans`, Chrome translates the current post or reply draft on-device. The draft is not sent to an extension server or translation endpoint.
 - Does not use analytics or persist account data or drafts.
-- Requests access only to X and Twitter pages. The `scripting` permission lets an update replace stale page code in already-open X tabs without reloading the page or losing a draft.
-- Uses a background service worker only when the extension is installed or updated; it injects the current local files into open X tabs and does not read or store drafts.
+- Requests access only to X and Twitter pages. The `scripting` permission schedules one page refresh after an extension update. A lifecycle guard catches manual unpacked-extension reloads and asks the browser to refresh after activation, so an old X page cannot retain an invalid extension context.
+- Uses a background service worker only when the extension is installed or updated; it schedules the page refresh and does not read or store drafts.
 
 ## Verify
 

@@ -21,14 +21,6 @@
     return normalized.split("-")[0];
   }
 
-  function progressMonitor(onProgress, stage) {
-    return (monitor) => {
-      monitor.addEventListener("downloadprogress", (event) => {
-        if (typeof onProgress === "function") onProgress({ stage, loaded: event.loaded });
-      });
-    };
-  }
-
   function friendlyError(error) {
     const name = error?.name || "";
     const message = error instanceof Error ? error.message : String(error || "Translation failed.");
@@ -54,7 +46,7 @@
     let detectorPromise = null;
     const translatorPromises = new Map();
 
-    function getDetector(onProgress) {
+    function getDetector() {
       if (detectorPromise) return detectorPromise;
       if (!LanguageDetectorApi || typeof LanguageDetectorApi.create !== "function") {
         return Promise.reject(new Error("Chrome 138 or newer is required for automatic language detection."));
@@ -62,7 +54,7 @@
 
       let creation;
       try {
-        creation = LanguageDetectorApi.create({ monitor: progressMonitor(onProgress, "language-detection") });
+        creation = LanguageDetectorApi.create();
       } catch (error) {
         return Promise.reject(error);
       }
@@ -73,7 +65,7 @@
       return detectorPromise;
     }
 
-    function getTranslator(sourceLanguage, onProgress) {
+    function getTranslator(sourceLanguage) {
       if (translatorPromises.has(sourceLanguage)) return translatorPromises.get(sourceLanguage);
       if (!TranslatorApi || typeof TranslatorApi.create !== "function") {
         return Promise.reject(new Error("Chrome 138 or newer is required for on-device translation."));
@@ -83,8 +75,7 @@
       try {
         creation = TranslatorApi.create({
           sourceLanguage,
-          targetLanguage: TARGET_LANGUAGE,
-          monitor: progressMonitor(onProgress, "translation")
+          targetLanguage: TARGET_LANGUAGE
         });
       } catch (error) {
         return Promise.reject(error);
@@ -97,11 +88,11 @@
       return promise;
     }
 
-    function detectSourceLanguage(text, onProgress) {
+    function detectSourceLanguage(text) {
       const hint = sourceLanguageHint(text);
       if (hint) return Promise.resolve(hint);
 
-      return getDetector(onProgress).then(async (detector) => {
+      return getDetector().then(async (detector) => {
         const candidates = await detector.detect(text);
         const language = normalizeLanguage(candidates?.[0]?.detectedLanguage);
         if (!language) throw new Error("Chrome could not detect the draft language.");
@@ -109,7 +100,7 @@
       });
     }
 
-    function translateToEnglish(text, options = {}) {
+    function translateToEnglish(text) {
       const sourceText = normalizeText(text);
       if (!sourceText) return Promise.reject(new Error("Draft text is empty."));
 
@@ -121,13 +112,13 @@
       } else if (hintedLanguage) {
         // Start model creation in the trusted click handler so Chrome may download
         // the language pack on first use without losing user activation.
-        operation = getTranslator(hintedLanguage, options.onProgress).then((translator) =>
+        operation = getTranslator(hintedLanguage).then((translator) =>
           translator.translate(sourceText)
         );
       } else {
-        operation = detectSourceLanguage(sourceText, options.onProgress).then((sourceLanguage) => {
+        operation = detectSourceLanguage(sourceText).then((sourceLanguage) => {
           if (sourceLanguage === TARGET_LANGUAGE) return sourceText;
-          return getTranslator(sourceLanguage, options.onProgress).then((translator) =>
+          return getTranslator(sourceLanguage).then((translator) =>
             translator.translate(sourceText)
           );
         });

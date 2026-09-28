@@ -3,27 +3,21 @@ const assert = require("node:assert/strict");
 
 const background = require("./background.js");
 
-test("injectCurrentVersion installs CSS and all scripts in the page main world", async () => {
-  const calls = [];
-  const chromeApi = {
-    scripting: {
-      insertCSS: async (options) => calls.push(["css", options]),
-      executeScript: async (options) => calls.push(["script", options])
-    }
-  };
+test("scheduleHostReload installs a delayed page reload in the main world", async () => {
+  let options;
+  const chromeApi = { scripting: { executeScript: async (value) => { options = value; } } };
 
-  await background.injectCurrentVersion(42, chromeApi);
+  await background.scheduleHostReload(27, chromeApi);
 
-  assert.deepEqual(calls[0], ["css", { target: { tabId: 42 }, files: ["content.css"] }]);
-  assert.equal(calls[1][0], "script");
-  assert.deepEqual(calls[1][1].target, { tabId: 42 });
-  assert.deepEqual(calls[1][1].files, background.MAIN_FILES);
-  assert.equal(calls[1][1].world, "MAIN");
-  assert.equal(calls[1][1].injectImmediately, true);
+  assert.deepEqual(options.target, { tabId: 27 });
+  assert.equal(options.world, "MAIN");
+  assert.equal(options.injectImmediately, true);
+  assert.deepEqual(options.args, [background.HOST_REFRESH_DELAY_MS]);
+  assert.equal(typeof options.func, "function");
 });
 
-test("updateOpenXTabs injects only tabs with valid ids and isolates per-tab failures", async () => {
-  const injected = [];
+test("refreshOpenXTabs schedules only matching tabs with valid ids and isolates per-tab failures", async () => {
+  const scheduled = [];
   const chromeApi = {
     tabs: {
       query: async (query) => {
@@ -32,27 +26,39 @@ test("updateOpenXTabs injects only tabs with valid ids and isolates per-tab fail
       }
     },
     scripting: {
-      insertCSS: async ({ target }) => injected.push(`css:${target.tabId}`),
       executeScript: async ({ target }) => {
-        injected.push(`script:${target.tabId}`);
+        scheduled.push(target.tabId);
         if (target.tabId === 12) throw new Error("tab closed");
       }
     }
   };
 
-  await background.updateOpenXTabs(chromeApi);
+  await background.refreshOpenXTabs(chromeApi);
 
-  assert.deepEqual(injected.sort(), ["css:11", "css:12", "script:11", "script:12"]);
+  assert.deepEqual(scheduled.sort(), [11, 12]);
 });
 
-test("register attaches the update reinjection to runtime.onInstalled", () => {
+test("register reloads host pages after extension install or update", async () => {
   let listener;
+  let queries = 0;
   const chromeApi = {
     runtime: { onInstalled: { addListener(callback) { listener = callback; } } },
-    scripting: {},
-    tabs: {}
+    tabs: {
+      query: async () => {
+        queries += 1;
+        return [];
+      }
+    },
+    scripting: { executeScript: async () => {} }
   };
 
   background.register(chromeApi);
   assert.equal(typeof listener, "function");
+  listener({ reason: "chrome_update" });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(queries, 0);
+
+  listener({ reason: "update" });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(queries, 1);
 });

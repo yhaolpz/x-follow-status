@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X Follow Status",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "minimum_chrome_version": "138",
   "description": "Show follow relationships on X and translate post or reply drafts to English.",
   "permissions": ["scripting"],
@@ -10,6 +10,11 @@
     "service_worker": "background.js"
   },
   "content_scripts": [
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "js": ["lifecycle-guard.js"],
+      "run_at": "document_start"
+    },
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],
       "js": [

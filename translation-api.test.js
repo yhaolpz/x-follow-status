@@ -3,14 +3,6 @@ const assert = require("node:assert/strict");
 
 const translationApi = require("./translation-api.js");
 
-function monitorWithProgress(options, loaded = 1) {
-  options.monitor({
-    addEventListener(type, listener) {
-      if (type === "downloadprogress") listener({ loaded });
-    }
-  });
-}
-
 test("detects Chinese, Japanese, and Korean scripts without a model", () => {
   assert.equal(translationApi.sourceLanguageHint("一条中文回复"), "zh");
   assert.equal(translationApi.sourceLanguageHint("返信テスト"), "ja");
@@ -25,15 +17,13 @@ test("normalizes detected language tags for Chrome translation packs", () => {
   assert.equal(translationApi.normalizeLanguage("und"), "");
 });
 
-test("translates a multiline Chinese draft directly and reports model progress", async () => {
+test("translates a multiline Chinese draft directly without a persistent model callback", async () => {
   const created = [];
-  const progress = [];
   let detectorCreates = 0;
   const service = translationApi.createTranslationService({
     TranslatorApi: {
       create(options) {
         created.push(options);
-        monitorWithProgress(options, 0.42);
         return Promise.resolve({
           translate: async () => "English first line\nEnglish second line\nhttps://example.com"
         });
@@ -46,15 +36,13 @@ test("translates a multiline Chinese draft directly and reports model progress",
     }
   });
 
-  const result = await service.translateToEnglish("中文第一行\n中文第二行\nhttps://example.com", {
-    onProgress: (event) => progress.push(event)
-  });
+  const result = await service.translateToEnglish("中文第一行\n中文第二行\nhttps://example.com");
 
   assert.equal(result, "English first line\nEnglish second line\nhttps://example.com");
   assert.equal(detectorCreates, 0);
   assert.equal(created[0].sourceLanguage, "zh");
   assert.equal(created[0].targetLanguage, "en");
-  assert.deepEqual(progress, [{ stage: "translation", loaded: 0.42 }]);
+  assert.equal("monitor" in created[0], false);
 });
 
 test("uses Chrome language detection for drafts without a distinctive script", async () => {

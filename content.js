@@ -1,5 +1,5 @@
 (function renderFollowStatus(global) {
-  const CONTENT_VERSION = "0.8.6";
+  const CONTENT_VERSION = "0.8.7";
   const CONTROLLER_KEY = "__xFollowStatusContentController";
   const previousController = global[CONTROLLER_KEY];
   if (previousController?.version === CONTENT_VERSION) {
@@ -147,19 +147,7 @@
     activeTranslations.set(requestId, transaction);
     setTranslateState(composerRoot, "loading", "Trans…", "Translating draft to English", requestId);
     try {
-      const translation = await translationApi.translateToEnglish(source, {
-        onProgress({ loaded }) {
-          if (translationStates.get(transaction.composerRoot)?.requestId !== requestId) return;
-          const percent = Number.isFinite(loaded) ? Math.max(0, Math.min(100, Math.round(loaded * 100))) : null;
-          setTranslateState(
-            transaction.composerRoot,
-            "loading",
-            percent === null ? "Trans…" : `${percent}%`,
-            percent === null ? "Preparing Chrome's translation model" : `Downloading translation model: ${percent}%`,
-            requestId
-          );
-        }
-      });
+      const translation = await translationApi.translateToEnglish(source);
       const currentEditor = currentEditorForTranslation(transaction);
       if (!currentEditor) throw new Error("X rebuilt the draft editor. Select Trans again.");
       if (editorText(currentEditor) !== source) {

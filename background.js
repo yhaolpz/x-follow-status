@@ -1,45 +1,46 @@
-(function registerUpdateInjection(global) {
+(function registerUpdateRefresh(global) {
   const X_URL_PATTERNS = ["https://x.com/*", "https://twitter.com/*"];
-  const MAIN_FILES = [
-    "relationship-parser.js",
-    "response-matcher.js",
-    "relationship-display.js",
-    "translation-api.js",
-    "editor-text.js",
-    "page-hook.js",
-    "content.js"
-  ];
+  const HOST_REFRESH_DELAY_MS = 250;
 
-  async function injectCurrentVersion(tabId, chromeApi = global.chrome) {
-    await chromeApi.scripting.insertCSS({
+  function reloadPageAfterDelay(delay) {
+    globalThis.setTimeout(() => globalThis.location.reload(), delay);
+  }
+
+  function scheduleHostReload(tabId, chromeApi = global.chrome) {
+    return chromeApi.scripting.executeScript({
       target: { tabId },
-      files: ["content.css"]
-    });
-    await chromeApi.scripting.executeScript({
-      target: { tabId },
-      files: MAIN_FILES,
       world: "MAIN",
-      injectImmediately: true
+      injectImmediately: true,
+      args: [HOST_REFRESH_DELAY_MS],
+      func: reloadPageAfterDelay
     });
   }
 
-  async function updateOpenXTabs(chromeApi = global.chrome) {
+  async function refreshOpenXTabs(chromeApi = global.chrome) {
     const tabs = await chromeApi.tabs.query({ url: X_URL_PATTERNS });
     await Promise.allSettled(
       tabs
         .filter((tab) => Number.isInteger(tab.id))
-        .map((tab) => injectCurrentVersion(tab.id, chromeApi))
+        .map((tab) => scheduleHostReload(tab.id, chromeApi))
     );
   }
 
   function register(chromeApi = global.chrome) {
     if (!chromeApi?.runtime?.onInstalled || !chromeApi?.scripting || !chromeApi?.tabs) return;
-    chromeApi.runtime.onInstalled.addListener(() => {
-      void updateOpenXTabs(chromeApi).catch(() => {});
+    chromeApi.runtime.onInstalled.addListener((details) => {
+      if (details?.reason !== "install" && details?.reason !== "update") return;
+      void refreshOpenXTabs(chromeApi).catch(() => {});
     });
   }
 
-  const api = { MAIN_FILES, X_URL_PATTERNS, injectCurrentVersion, register, updateOpenXTabs };
+  const api = {
+    HOST_REFRESH_DELAY_MS,
+    X_URL_PATTERNS,
+    refreshOpenXTabs,
+    register,
+    reloadPageAfterDelay,
+    scheduleHostReload
+  };
   register();
 
   if (typeof module !== "undefined" && module.exports) module.exports = api;
