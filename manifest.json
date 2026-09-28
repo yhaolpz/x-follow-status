@@ -1,24 +1,29 @@
 {
   "manifest_version": 3,
   "name": "X Follow Status",
-  "version": "0.8.4",
+  "version": "0.8.6",
+  "minimum_chrome_version": "138",
   "description": "Show follow relationships on X and translate post or reply drafts to English.",
-  "host_permissions": ["https://translate.googleapis.com/*"],
+  "permissions": ["scripting"],
+  "host_permissions": ["https://x.com/*", "https://twitter.com/*"],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["relationship-parser.js", "response-matcher.js", "page-hook.js"],
+      "js": [
+        "relationship-parser.js",
+        "response-matcher.js",
+        "relationship-display.js",
+        "translation-api.js",
+        "editor-text.js",
+        "page-hook.js",
+        "content.js"
+      ],
+      "css": ["content.css"],
       "run_at": "document_start",
       "world": "MAIN"
-    },
-    {
-      "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["relationship-display.js", "runtime-bridge.js", "editor-text.js", "content.js"],
-      "css": ["content.css"],
-      "run_at": "document_start"
     }
   ]
 }

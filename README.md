@@ -10,7 +10,7 @@ An unpacked Manifest V3 Chrome/Chromium extension that shows follow relationship
 
 The extension adds a `Trans` button immediately to the left of X's `Post` and `Reply` buttons. Write a post or reply in any supported language and select `Trans` to replace the draft with its English translation. The translated draft remains editable and is never posted automatically.
 
-Translation uses Google's keyless `translate.googleapis.com` endpoint with automatic source-language detection and English as the target language. Google may rate-limit or change this unofficial, no-SLA endpoint.
+Translation uses the Translator and Language Detector APIs built into Chrome 138 and newer. Chrome downloads the required language model on first use, then translates the draft on-device with English as the target language.
 
 ## Posts and replies
 
@@ -36,14 +36,14 @@ On `/<handle>/following`, use the fixed top-right button `滚动到下个没关�
 
 ## How it works
 
-It observes X's existing `TweetDetail`, `TweetResultByRestId`, user-detail, `Following`, and `BlueVerifiedFollowers` responses in the logged-in tab. It does not make follow or unfollow requests. Draft translation is a separate request to Google Translate that runs only after you select `Trans`.
+It observes X's existing `TweetDetail`, `TweetResultByRestId`, user-detail, `Following`, and `BlueVerifiedFollowers` responses in the logged-in tab. It does not make follow or unfollow requests. Draft translation runs only after you select `Trans` and uses Chrome's on-device translation model.
 
 ## Install locally
 
 1. Open `chrome://extensions`.
 2. Enable **Developer mode**.
 3. Select **Load unpacked** and choose this directory.
-4. Refresh an already-open X tab.
+4. Open or return to X. The extension also updates already-open X tabs when the unpacked extension is reloaded.
 
 The extension only sees new X responses after it has loaded. X's internal GraphQL schema can change, so a future X web update may require adjusting the response matcher or relationship field path.
 
@@ -51,22 +51,22 @@ The extension only sees new X responses after it has loaded. X's internal GraphQ
 
 - Runs only on `x.com` and `twitter.com` pages.
 - Reads relationship fields already returned to the signed-in X tab; it does not call X's follow or unfollow endpoints.
-- When you select `Trans`, sends only the current post or reply draft to `translate.googleapis.com` to translate it into English.
+- When you select `Trans`, Chrome translates the current post or reply draft on-device. The draft is not sent to an extension server or translation endpoint.
 - Does not use analytics or persist account data or drafts.
-- Uses a background service worker only for the Google Translate request. It has no storage permission and cannot access other browsing data.
+- Requests access only to X and Twitter pages. The `scripting` permission lets an update replace stale page code in already-open X tabs without reloading the page or losing a draft.
+- Uses a background service worker only when the extension is installed or updated; it injects the current local files into open X tabs and does not read or store drafts.
 
 ## Verify
 
 ```sh
-node --test relationship-parser.test.js translation-api.test.js runtime-bridge.test.js editor-text.test.js
+node --test relationship-parser.test.js translation-api.test.js editor-text.test.js background.test.js
+node --check background.js
 node --check relationship-parser.js
 node --check response-matcher.js
 node --check relationship-display.js
-node --check runtime-bridge.js
 node --check editor-text.js
 node --check page-hook.js
 node --check content.js
 node --check translation-api.js
-node --check background.js
 node -e 'JSON.parse(require("node:fs").readFileSync("manifest.json", "utf8"))'
 ```
