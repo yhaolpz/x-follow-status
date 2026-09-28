@@ -1,6 +1,6 @@
 (function registerEditorText(global) {
   const STABLE_FRAME_COUNT = 2;
-  const MAX_FRAME_COUNT = 6;
+  const MAX_FRAME_COUNT = 8;
   const MAX_REPLACE_ATTEMPTS = 2;
 
   function normalizeText(text) {
@@ -26,7 +26,6 @@
     const windowRef = options.windowRef ?? global;
 
     return {
-      documentRef,
       windowRef,
       nextFrame: options.nextFrame ?? (() => defaultNextFrame(windowRef)),
       execCommand:
@@ -42,23 +41,13 @@
     }
   }
 
-  function selectEditorContents(editor, env) {
+  function selectEntireEditor(editor, env) {
     focusEditor(editor);
-    const selection = env.windowRef.getSelection();
-    const range = env.documentRef.createRange();
-    range.selectNodeContents(editor);
-    selection.removeAllRanges();
-    selection.addRange(range);
-  }
+    env.execCommand("selectAll");
 
-  function placeCaretAtEnd(editor, env) {
-    focusEditor(editor);
-    const selection = env.windowRef.getSelection();
-    const range = env.documentRef.createRange();
-    range.selectNodeContents(editor);
-    range.collapse(false);
-    selection.removeAllRanges();
-    selection.addRange(range);
+    const currentText = readEditorText(editor);
+    const selectedText = normalizeText(env.windowRef.getSelection()?.toString());
+    return Boolean(currentText) && selectedText === currentText;
   }
 
   async function waitForStableText(editor, expectedText, nextFrame) {
@@ -73,20 +62,11 @@
     return false;
   }
 
-  async function clearEditor(editor, env) {
-    selectEditorContents(editor, env);
-    await env.nextFrame();
-    env.execCommand("delete");
-    env.windowRef.getSelection().removeAllRanges();
+  async function replaceOnce(editor, text, env) {
+    if (!selectEntireEditor(editor, env)) return false;
 
-    return waitForStableText(editor, "", env.nextFrame);
-  }
-
-  async function insertEditorText(editor, text, env) {
-    placeCaretAtEnd(editor, env);
-    await env.nextFrame();
     env.execCommand("insertText", text);
-
+    env.windowRef.getSelection()?.removeAllRanges();
     return waitForStableText(editor, text, env.nextFrame);
   }
 
@@ -97,18 +77,15 @@
     const env = environment(options);
     const originalText = readEditorText(editor);
     for (let attempt = 0; attempt < MAX_REPLACE_ATTEMPTS; attempt += 1) {
-      if (!(await clearEditor(editor, env))) continue;
-      if (await insertEditorText(editor, translation, env)) return;
+      if (await replaceOnce(editor, translation, env)) return;
     }
 
-    const clearedForRestore = await clearEditor(editor, env);
-    const restored = clearedForRestore && (!originalText || (await insertEditorText(editor, originalText, env)));
-    if (!restored) await clearEditor(editor, env);
-
+    const currentText = readEditorText(editor);
+    const restored = currentText === originalText || (currentText && (await replaceOnce(editor, originalText, env)));
     throw new Error(
       restored
         ? "X did not accept the translated draft. The original draft was restored."
-        : "X did not accept the translated draft. The editor was cleared to avoid mixed text."
+        : "X did not accept the translated draft. Please undo once to restore your draft."
     );
   }
 

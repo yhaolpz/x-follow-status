@@ -127,7 +127,8 @@
 
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "x-follow-status__translate-button";
+      button.className = "x-follow-status__translate-button notranslate";
+      button.translate = false;
       resetTranslateButton(button);
       button.addEventListener("click", () => handleTranslateDraft(button, editor));
       buttonContainer.insertBefore(button, submitButton);
@@ -298,7 +299,10 @@
   });
 
   new MutationObserver((mutations) => {
-    if (mutations.some((mutation) => !mutation.target.closest?.(".x-follow-status"))) queueRefresh();
+    const extensionUiSelector =
+      ".x-follow-status, .x-follow-status__translate-button, .x-follow-status__next-button";
+    const hasExternalMutation = mutations.some((mutation) => !mutation.target.closest?.(extensionUiSelector));
+    if (hasExternalMutation) queueRefresh();
   }).observe(document.documentElement, { childList: true, subtree: true });
   queueRefresh();
 })();
